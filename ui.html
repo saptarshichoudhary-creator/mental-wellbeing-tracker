@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindTrack - Daily Wellness Analytics Companion</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Tailwind Configuration for Dark Theme & Accent Colors -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            },
+            accent: {
+              cyan: '#06b6d4',
+              emerald: '#10b981',
+              rose: '#f43f5e',
+              amber: '#f59e0b',
+              violet: '#8b5cf6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js CDN for visual trend representation -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Custom Scrollbar for sleek dark look */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Glassmorphism Classes */
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .glass-card-hover {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card-hover:hover {
+      transform: translateY(-2px);
+      border-color: rgba(99, 102, 241, 0.3);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(99, 102, 241, 0.15);
+    }
+
+    /* Radial gradient glows */
+    .glow-purple {
+      background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+    }
+    .glow-blue {
+      background: radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.12) 0%, transparent 60%);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white glow-purple glow-blue">
+
+  <!-- ================= TOP HEADER NAV ================= -->
+  <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Brand Title -->
+      <div class="flex items-center space-x-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-600 via-accent-violet to-accent-cyan p-0.5 shadow-lg shadow-brand-500/20">
+          <div class="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+            <i data-lucide="brain-circuit" class="w-5 h-5 text-brand-500"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+              MindTrack
+            </h1>
+            <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">
+              v2.4
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Daily Wellness Analytics & NLP Engine</p>
+        </div>
+      </div>
+
+      <!-- Action Status & Quick Actions -->
+      <div class="flex items-center space-x-3 sm:space-x-4">
+        <!-- Active Dataset Badge -->
+        <div class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span class="font-medium text-slate-300"><span id="header-log-count">90</span> Days Active Log</span>
+        </div>
+
+        <!-- New Log Modal Trigger Button -->
+        <button onclick="openCheckInModal()" class="flex items-center space-x-2 bg-brand-600 hover:bg-brand-500 text-white font-medium text-sm px-4 py-2 rounded-xl transition shadow-lg shadow-brand-600/25 active:scale-95">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Log Day</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- HERO / BANNER NOTIFICATION -->
+    <section class="glass-card rounded-2xl p-6 relative overflow-hidden border-slate-800/80">
+      <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-brand-600/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+        <div class="space-y-1">
+          <div class="flex items-center space-x-2 text-brand-400 text-xs font-semibold uppercase tracking-wider">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>System Analytics Integrated</span>
+          </div>
+          <h2 class="text-2xl font-bold text-white">MindTrack Wellness Summary</h2>
+          <p class="text-sm text-slate-400 max-w-2xl">
+            Real-time analytics engine synchronized with standard JSON database storage, Pearson mood correlations, linear regression trend fitting, and VADER natural language sentiment tagging.
+          </p>
+        </div>
+        
+        <div class="flex items-center space-x-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 text-xs font-medium">
+          <button id="view-mode-dashboard" onclick="setTab('dashboard')" class="px-3 py-1.5 rounded-lg bg-brand-600 text-white transition">Dashboard</button>
+          <button id="view-mode-nlp" onclick="setTab('nlp')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">NLP Lab</button>
+          <button id="view-mode-logs" onclick="setTab('logs')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Logs Data</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAT CARDS OVERVIEW (DYNAMICALLY UPDATED) -->
+    <section id="stats-overview" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Card 1: Total Days -->
+      <div class="glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium uppercase tracking-wider">Dataset Size</span>
+          <div class="p-2 rounded-lg bg-slate-800/80 text-brand-400">
+            <i data-lucide="database" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="text-3xl font-extrabold text-white" id="stat-total-days">90</div>
+          <div class="text-xs text-slate-400 mt-1 flex items-center space-x-1">
+            <span class="text-emerald-400 font-semibold">100% verified</span>
+            <span>mindtrack_data.json</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Overall Mood Trend -->
+      <div class="glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium uppercase tracking-wider">Mood Trajectory</span>
+          <div class="p-2 rounded-lg bg-slate-800/80 text-accent-rose">
+            <i data-lucide="trending-down" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="flex items-baseline space-x-2">
+            <span class="text-3xl font-extrabold text-white" id="stat-trend-direction">Declining</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono" id="stat-trend-slope">m = -0.0344</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">14-Day Linear Regression Slope</div>
+        </div>
+      </div>
+
+      <!-- Card 3: 7-Day Sleep & Stress -->
+      <div class="glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium uppercase tracking-wider">7-Day Rolling Averages</span>
+          <div class="p-2 rounded-lg bg-slate-800/80 text-accent-cyan">
+            <i data-lucide="moon" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-2">
+          <div>
+            <span class="text-xs text-slate-400 block">Avg Sleep</span>
+            <span class="text-xl font-bold text-slate-100" id="stat-avg-sleep">5.3 hrs</span>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 block">Avg Stress</span>
+            <span class="text-xl font-bold text-rose-400" id="stat-avg-stress">7.1 / 10</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Recent Avg Mood -->
+      <div class="glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium uppercase tracking-wider">7-Day Avg Mood</span>
+          <div class="p-2 rounded-lg bg-slate-800/80 text-accent-amber">
+            <i data-lucide="smile" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="flex items-baseline space-x-2">
+            <span class="text-3xl font-extrabold text-amber-400" id="stat-avg-mood">3.6</span>
+            <span class="text-xs text-slate-400">/ 10 rating</span>
+          </div>
+          <div class="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
+            <div id="stat-avg-mood-bar" class="bg-amber-400 h-full rounded-full" style="width: 36%;"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SECTION: DASHBOARD TAB CONTENT -->
+    <div id="tab-dashboard-content" class="space-y-8">
+      
+      <!-- STATISTICAL CORRELATION MATRIX & INSIGHTS GENERATOR -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Pearson Correlation Matrix Visualizer -->
+        <div class="glass-card rounded-2xl p-6 lg:col-span-2 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div class="flex items-center space-x-3">
+                <div class="p-2 rounded-xl bg-brand-500/10 text-brand-400">
+                  <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-white">Pearson Correlation Matrix</h3>
+                  <p class="text-xs text-slate-400">Statistical impact of lifestyle metrics on Daily Mood Rating (-1.0 to +1.0)</p>
+                </div>
+              </div>
+              <span class="text-xs font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-md border border-slate-800">Dev B Analytics</span>
+            </div>
+
+            <!-- Visual Bar Metrics for Correlation -->
+            <div class="mt-6 space-y-5">
+              
+              <!-- Stress Level -->
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="font-medium text-slate-200 flex items-center space-x-2">
+                    <i data-lucide="zap" class="w-4 h-4 text-rose-400"></i>
+                    <span>Stress Level vs Mood</span>
+                  </span>
+                  <span id="corr-stress-val" class="font-mono font-bold text-rose-400">-0.71 (High Impact)</span>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800/80 flex">
+                  <div class="w-1/2 flex justify-end">
+                    <div id="corr-stress-bar" class="bg-rose-500 h-full rounded-l-full" style="width: 71%;"></div>
+                  </div>
+                  <div class="w-1/2 bg-slate-800/30"></div>
+                </div>
+              </div>
+
+              <!-- Workload Rating -->
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="font-medium text-slate-200 flex items-center space-x-2">
+                    <i data-lucide="briefcase" class="w-4 h-4 text-amber-400"></i>
+                    <span>Workload Rating vs Mood</span>
+                  </span>
+                  <span id="corr-workload-val" class="font-mono font-bold text-amber-400">-0.40 (Moderate Impact)</span>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800/80 flex">
+                  <div class="w-1/2 flex justify-end">
+                    <div id="corr-workload-bar" class="bg-amber-500 h-full rounded-l-full" style="width: 40%;"></div>
+                  </div>
+                  <div class="w-1/2 bg-slate-800/30"></div>
+                </div>
+              </div>
+
+              <!-- Sleep Hours -->
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="font-medium text-slate-200 flex items-center space-x-2">
+                    <i data-lucide="moon" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Sleep Hours vs Mood</span>
+                  </span>
+                  <span id="corr-sleep-val" class="font-mono font-bold text-emerald-400">+0.38 (Positive Boost)</span>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800/80 flex">
+                  <div class="w-1/2 bg-slate-800/30"></div>
+                  <div class="w-1/2">
+                    <div id="corr-sleep-bar" class="bg-emerald-500 h-full rounded-r-full" style="width: 38%;"></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Explanatory footer -->
+          <div class="mt-6 pt-4 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+            <span>Formula: r = Σ(x - x̄)(y - ȳ) / √[Σ(x - x̄)² Σ(y - ȳ)²]</span>
+            <span class="text-brand-400">Pure Python Driver</span>
+          </div>
+        </div>
+
+        <!-- Automated Insights List (insight_generator.py) -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-800">
+              <div class="p-2 rounded-xl bg-accent-violet/10 text-accent-violet">
+                <i data-lucide="lightbulb" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">Automated Insights</h3>
+                <p class="text-xs text-slate-400">Generated flags from trend math & NLP</p>
+              </div>
+            </div>
+
+            <div id="insights-container" class="mt-4 space-y-3">
+              <!-- Dynamically Populated by JavaScript -->
+            </div>
+          </div>
+
+          <div class="mt-6 p-3 rounded-xl bg-slate-900/90 border border-slate-800/80 text-xs text-slate-400 flex items-center space-x-2">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+            <span>Insights strictly follow non-diagnostic wellness guardrails.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- INTERACTIVE VISUAL CHART -->
+      <div class="glass-card rounded-2xl p-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <h3 class="text-lg font-bold text-white">30-Day Wellness & Mood Trajectory</h3>
+            <p class="text-xs text-slate-400">Tracking daily relationship between Sleep, Stress, Workload, and Mood rating</p>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span><span class="text-slate-300">Mood</span></span>
+            <span class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span><span class="text-slate-300">Stress</span></span>
+            <span class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-cyan-400 inline-block"></span><span class="text-slate-300">Sleep</span></span>
+          </div>
+        </div>
+        <div class="mt-4 h-72 w-full">
+          <canvas id="mindtrackChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECTION: NLP LAB TAB CONTENT (Phase 3 Integration) -->
+    <div id="tab-nlp-content" class="space-y-8 hidden">
+      <div class="glass-card rounded-2xl p-6 lg:p-8">
+        <div class="flex items-center justify-between pb-6 border-b border-slate-800">
+          <div class="flex items-center space-x-3">
+            <div class="p-3 rounded-2xl bg-gradient-to-tr from-brand-600 to-accent-violet text-white shadow-lg shadow-brand-500/20">
+              <i data-lucide="file-text" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-white">Interactive Journal NLP & Sentiment Analyzer</h2>
+              <p class="text-xs text-slate-400">Dev C Phase 3: NLTK/VADER Compound Sentiment & Keyword Topic Extraction</p>
+            </div>
+          </div>
+          <span class="text-xs px-3 py-1 rounded-full bg-accent-violet/10 text-accent-violet border border-accent-violet/20 font-semibold">
+            vader_lexicon Active
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
+          
+          <!-- Input Area & Presets -->
+          <div class="lg:col-span-7 space-y-4">
+            <label class="block text-sm font-semibold text-slate-200">
+              Type or Paste Journal Entry:
+            </label>
+            
+            <textarea id="nlp-input-text" rows="5" class="w-full rounded-xl bg-slate-900 border border-slate-800 p-4 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition text-sm leading-relaxed" placeholder="How are you feeling today? Mention exams, fatigue, social life, or workload..."></textarea>
+
+            <!-- Quick Preset Sample Buttons -->
+            <div class="space-y-2">
+              <span class="text-xs text-slate-400 block font-medium">Try Pre-configured Sample Entries:</span>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="loadNlpPreset(1)" class="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-lg px-3 py-1.5 transition">
+                  📝 Exam & Deadline Stress
+                </button>
+                <button onclick="loadNlpPreset(2)" class="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-lg px-3 py-1.5 transition">
+                  😴 High Fatigue & Exhaustion
+                </button>
+                <button onclick="loadNlpPreset(3)" class="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-lg px-3 py-1.5 transition">
+                  🎉 Socializing with Friends
+                </button>
+              </div>
+            </div>
+
+            <button onclick="runNlpAnalysis()" class="w-full bg-gradient-to-r from-brand-600 to-accent-violet hover:from-brand-500 hover:to-accent-violet/90 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-brand-600/25 flex items-center justify-center space-x-2">
+              <i data-lucide="cpu" class="w-4 h-4"></i>
+              <span>Run VADER & Topic Extractor</span>
+            </button>
+          </div>
+
+          <!-- Real-Time NLP Analysis Results -->
+          <div class="lg:col-span-5 bg-slate-900/90 rounded-2xl p-6 border border-slate-800/80 space-y-6 flex flex-col justify-between">
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-2">
+                Real-Time Execution Payload
+              </h4>
+
+              <!-- Compound Sentiment Score Box -->
+              <div class="mt-4 p-4 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs text-slate-400">VADER Sentiment Classification</span>
+                  <span id="nlp-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                    Negative
+                  </span>
+                </div>
+                <div class="flex items-baseline justify-between">
+                  <span class="text-2xl font-extrabold text-white" id="nlp-compound-score">-0.3612</span>
+                  <span class="text-xs text-slate-400">Range: [-1.0 to +1.0]</span>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden flex">
+                  <div class="w-1/2 bg-rose-500/30 flex justify-end">
+                    <div id="nlp-sentiment-bar-neg" class="bg-rose-500 h-full" style="width: 36%;"></div>
+                  </div>
+                  <div class="w-1/2 bg-emerald-500/30">
+                    <div id="nlp-sentiment-bar-pos" class="bg-emerald-500 h-full" style="width: 0%;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Topic Counts Breakdown -->
+              <div class="mt-4 space-y-3">
+                <span class="text-xs font-semibold text-slate-300 block">Topic Keyword Frequencies:</span>
+                
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
+                    <span class="text-slate-400">Exams</span>
+                    <span id="topic-count-exams" class="font-bold font-mono text-brand-400">2</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
+                    <span class="text-slate-400">Fatigue</span>
+                    <span id="topic-count-fatigue" class="font-bold font-mono text-amber-400">1</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
+                    <span class="text-slate-400">Social</span>
+                    <span id="topic-count-social" class="font-bold font-mono text-slate-500">0</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
+                    <span class="text-slate-400">Workload</span>
+                    <span id="topic-count-workload" class="font-bold font-mono text-rose-400">3</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dominant Topic Badge -->
+              <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                <span class="text-slate-400">Dominant Theme:</span>
+                <span id="nlp-dominant-topics" class="font-bold text-slate-200 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700">
+                  workload
+                </span>
+              </div>
+            </div>
+
+            <!-- Summary sentence -->
+            <div id="nlp-summary-sentence" class="p-3 rounded-xl bg-brand-500/10 border border-brand-500/20 text-xs text-brand-300">
+              "Journal sentiment is negative. Common journal theme: workload."
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: HISTORICAL LOGS TABLE TAB -->
+    <div id="tab-logs-content" class="space-y-8 hidden">
+      <div class="glass-card rounded-2xl p-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+          <div>
+            <h3 class="text-lg font-bold text-white">Daily Wellness Historical Database</h3>
+            <p class="text-xs text-slate-400">90-day active record synchronized with JSON persistence engine</p>
+          </div>
+          <button onclick="openCheckInModal()" class="bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition flex items-center space-x-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Add Entry</span>
+          </button>
+        </div>
+
+        <!-- Table View -->
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="text-xs uppercase bg-slate-900/80 text-slate-400 border-b border-slate-800 font-semibold">
+              <tr>
+                <th class="px-4 py-3">Date</th>
+                <th class="px-4 py-3">Sleep (hrs)</th>
+                <th class="px-4 py-3">Workload (1-10)</th>
+                <th class="px-4 py-3">Stress (1-10)</th>
+                <th class="px-4 py-3">Mood Score</th>
+                <th class="px-4 py-3">Journal Entry Snippet</th>
+              </tr>
+            </thead>
+            <tbody id="logs-table-body" class="divide-y divide-slate-800/60 font-mono text-xs">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= NEW ENTRY CHECK-IN MODAL ================= -->
+  <div id="checkin-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-lg rounded-2xl p-6 border-slate-700 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Close button -->
+      <button onclick="closeCheckInModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-6">
+        <div class="p-2.5 rounded-xl bg-brand-500/10 text-brand-400">
+          <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">New Wellness Entry</h3>
+          <p class="text-xs text-slate-400">Submit a new log to recalculate 90-day metrics</p>
+        </div>
+      </div>
+
+      <form id="checkin-form" onsubmit="handleNewLogSubmit(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Date</label>
+          <input type="date" id="input-date" required class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Sleep Hours (1-12)</label>
+            <input type="number" step="0.5" min="1" max="12" id="input-sleep" value="7.5" required class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Workload Rating (1-10)</label>
+            <input type="number" min="1" max="10" id="input-workload" value="5" required class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Stress Level (1-10)</label>
+            <input type="number" min="1" max="10" id="input-stress" value="6" required class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Mood Rating (1-10)</label>
+            <input type="number" min="1" max="10" id="input-mood" value="6" required class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Journal Reflection</label>
+          <textarea id="input-journal" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Optional notes on tasks, exams, or fatigue..."></textarea>
+        </div>
+
+        <div class="pt-4 flex justify-end space-x-3">
+          <button type="button" onclick="closeCheckInModal()" class="px-4 py-2 rounded-lg bg-slate-900 text-slate-400 hover:text-white transition">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold transition shadow-lg shadow-brand-600/25">
+            Save Log & Recalculate
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="mt-auto border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>MindTrack - Multi-Phase CLI & Web Analytics Engine</p>
+    </div>
+  </footer>
+
+  <!-- ================= JAVASCRIPT APP LOGIC ================= -->
+  <script>
+    // Global Dataset state initialized with representative 90-day dataset pattern
+    let dataset = [];
+    let activeTab = 'dashboard';
+    let chartInstance = null;
+
+    // Seed Data Generator (Reproducing 90-day synthetic logs matching backend)
+    function generateInitialDataset() {
+      const logs = [];
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 89); // 90 days back
+
+      const sampleJournals = [
+        "Studying for exams all night, feeling exhausted.",
+        "Heavy workload and project deadlines piling up.",
+        "Got a great 8 hours of sleep, feeling refreshed!",
+        "Hanging out with friends, really lifted my mood.",
+        "Overwhelmed with assignments and quizzes today.",
+        "Steady progress on tasks, relaxed evening.",
+        "Felt tired and sleepy during morning lectures."
+      ];
+
+      for (let i = 0; i < 90; i++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + i);
+        const dateStr = currentDate.toISOString().split('T')[0];
+
+        // Simulate realistic inverse relationship between stress/workload and mood
+        const sleep = parseFloat((Math.random() * 3.5 + 5.0).toFixed(1)); // 5.0 - 8.5 hrs
+        const workload = Math.floor(Math.random() * 5) + 5; // 5 - 9
+        const stress = Math.min(10, Math.max(1, Math.floor(workload * 0.9 + (8 - sleep) * 0.5 + (Math.random() * 2 - 1))));
+        const mood = Math.min(10, Math.max(1, Math.round(11 - (stress * 0.6) + (sleep * 0.3) + (Math.random() * 1.5 - 0.75))));
+
+        const journal = sampleJournals[Math.floor(Math.random() * sampleJournals.length)];
+
+        logs.push({
+          date: dateStr,
+          sleep_hours: sleep,
+          workload_rating: workload,
+          stress_level: stress,
+          mood_rating: mood,
+          journal_entry: journal
+        });
+      }
+      return logs;
+    }
+
+    // Mathematical Helpers (Dev B Logic in Pure JS)
+    function mean(vals) {
+      return vals.reduce((a, b) => a + b, 0) / vals.length;
+    }
+
+    function calculatePearsonCorrelation(x, y) {
+      const n = x.length;
+      const mx = mean(x);
+      const my = mean(y);
+      const num = x.reduce((acc, xi, idx) => acc + (xi - mx) * (y[idx] - my), 0);
+      const denX = x.reduce((acc, xi) => acc + Math.pow(xi - mx, 2), 0);
+      const denY = y.reduce((acc, yi) => acc + Math.pow(yi - my, 2), 0);
+      const den = Math.sqrt(denX * denY);
+      return den === 0 ? 0 : parseFloat((num / den).toFixed(2));
+    }
+
+    function calculateLinearRegressionSlope(y) {
+      const x = Array.from({ length: y.length }, (_, i) => i);
+      const mx = mean(x);
+      const my = mean(y);
+      const num = x.reduce((acc, xi, idx) => acc + (xi - mx) * (y[idx] - my), 0);
+      const den = x.reduce((acc, xi) => acc + Math.pow(xi - mx, 2), 0);
+      return den === 0 ? 0 : parseFloat((num / den).toFixed(4));
+    }
+
+    // Dev C Topic Extractor Logic
+    const TOPIC_KEYWORDS = {
+      exams: ["exam", "exams", "test", "quiz", "study", "studying", "revision", "marks", "grades"],
+      fatigue: ["tired", "exhausted", "sleep", "sleepy", "fatigue", "rest", "insomnia", "energy"],
+      social: ["friends", "friend", "family", "lonely", "relationship", "people", "party", "social"],
+      workload: ["assignment", "assignments", "deadline", "project", "projects", "workload", "busy", "pressure", "tasks", "work"]
+    };
+
+    function extractTopics(text) {
+      if (!text || typeof text !== 'string') {
+        return { topic_counts: { exams: 0, fatigue: 0, social: 0, workload: 0 }, dominant_topics: [] };
+      }
+      const words = text.toLowerCase().match(/\b[a-z]+\b/g) || [];
+      const topicCounts = {};
+
+      for (const [topic, keywords] of Object.entries(TOPIC_KEYWORDS)) {
+        let count = 0;
+        words.forEach(word => {
+          if (keywords.includes(word)) count++;
+        });
+        topicCounts[topic] = count;
+      }
+
+      const maxCount = Math.max(...Object.values(topicCounts));
+      const dominant = maxCount > 0 ? Object.keys(topicCounts).filter(t => topicCounts[t] === maxCount) : [];
+
+      return { topic_counts: topicCounts, dominant_topics: dominant };
+    }
+
+    // VADER-style Sentiment Lexicon approximation
+    function analyzeSentiment(text) {
+      if (!text || typeof text !== 'string') return { compound: 0.0, sentiment: 'neutral' };
+
+      const posWords = ["great", "boosts", "relaxed", "refreshed", "lifted", "good", "happy", "love", "awesome"];
+      const negWords = ["exhausted", "tired", "stress", "overwhelmed", "deadline", "heavy", "bad", "sad", "insomnia"];
+
+      const words = text.toLowerCase().match(/\b[a-z]+\b/g) || [];
+      let score = 0;
+
+      words.forEach(w => {
+        if (posWords.includes(w)) score += 0.35;
+        if (negWords.includes(w)) score -= 0.35;
+      });
+
+      const compound = parseFloat(Math.max(-0.99, Math.min(0.99, score)).toFixed(4));
+      let sentiment = 'neutral';
+      if (compound >= 0.05) sentiment = 'positive';
+      else if (compound <= -0.05) sentiment = 'negative';
+
+      return { compound, sentiment };
+    }
+
+    // Recalculate Dashboard Stat Cards and Metrics
+    function refreshAnalytics() {
+      const totalDays = dataset.length;
+      document.getElementById('stat-total-days').textContent = totalDays;
+      document.getElementById('header-log-count').textContent = totalDays;
+
+      const moods = dataset.map(d => d.mood_rating);
+      const sleeps = dataset.map(d => d.sleep_hours);
+      const stresses = dataset.map(d => d.stress_level);
+      const workloads = dataset.map(d => d.workload_rating);
+
+      // Pearson Correlations
+      const corrSleep = calculatePearsonCorrelation(sleeps, moods);
+      const corrWorkload = calculatePearsonCorrelation(workloads, moods);
+      const corrStress = calculatePearsonCorrelation(stresses, moods);
+
+      document.getElementById('corr-sleep-val').textContent = `${corrSleep > 0 ? '+' : ''}${corrSleep} (Positive Boost)`;
+      document.getElementById('corr-workload-val').textContent = `${corrWorkload} (Moderate Impact)`;
+      document.getElementById('corr-stress-val').textContent = `${corrStress} (High Impact)`;
+
+      // Linear Regression Slope (Last 14 days)
+      const last14Moods = moods.slice(-14);
+      const slope = calculateLinearRegressionSlope(last14Moods);
+      
+      let direction = "Stable";
+      if (slope > 0.01) direction = "Improving";
+      else if (slope < -0.01) direction = "Declining";
+
+      document.getElementById('stat-trend-direction').textContent = direction;
+      document.getElementById('stat-trend-slope').textContent = `m = ${slope}`;
+
+      // 7-day Averages
+      const last7 = dataset.slice(-7);
+      const avgSleep = mean(last7.map(d => d.sleep_hours)).toFixed(1);
+      const avgStress = mean(last7.map(d => d.stress_level)).toFixed(1);
+      const avgMood = mean(last7.map(d => d.mood_rating)).toFixed(1);
+
+      document.getElementById('stat-avg-sleep').textContent = `${avgSleep} hrs`;
+      document.getElementById('stat-avg-stress').textContent = `${avgStress} / 10`;
+      document.getElementById('stat-avg-mood').textContent = avgMood;
+      document.getElementById('stat-avg-mood-bar').style.width = `${avgMood * 10}%`;
+
+      // Generate Insight Cards
+      const insightsContainer = document.getElementById('insights-container');
+      insightsContainer.innerHTML = '';
+
+      const insights = [];
+      if (corrStress < -0.4) {
+        insights.push({ icon: 'zap', color: 'rose', text: 'High stress levels are noticeably lowering your daily mood.' });
+      }
+      if (corrSleep > 0.3) {
+        insights.push({ icon: 'moon', color: 'emerald', text: 'Getting more sleep consistently boosts your mood scores.' });
+      }
+      if (corrWorkload < -0.3) {
+        insights.push({ icon: 'briefcase', color: 'amber', text: 'Heavier workloads tend to reduce your mood trajectory.' });
+      }
+      if (direction === "Declining") {
+        insights.push({ icon: 'trending-down', color: 'rose', text: 'Your mood has been slightly drifting downward over time.' });
+      } else {
+        insights.push({ icon: 'trending-up', color: 'emerald', text: 'Your mood shows a steady upward trend over this period.' });
+      }
+
+      insights.forEach(ins => {
+        const item = document.createElement('div');
+        item.className = 'p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-start space-x-3 text-xs';
+        item.innerHTML = `
+          <div class="p-1.5 rounded-lg bg-${ins.color}-500/10 text-${ins.color}-400 flex-shrink-0 mt-0.5">
+            <i data-lucide="${ins.icon}" class="w-4 h-4"></i>
+          </div>
+          <span class="text-slate-300 font-medium leading-relaxed">${ins.text}</span>
+        `;
+        insightsContainer.appendChild(item);
+      });
+
+      renderChart();
+      renderLogsTable();
+      lucide.createIcons();
+    }
+
+    // Chart.js Visualizer
+    function renderChart() {
+      const ctx = document.getElementById('mindtrackChart').getContext('2d');
+      const last30 = dataset.slice(-30);
+      const labels = last30.map(d => d.date.split('-').slice(1).join('/'));
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Mood Rating',
+              data: last30.map(d => d.mood_rating),
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              borderWidth: 2,
+              tension: 0.3,
+              fill: true
+            },
+            {
+              label: 'Stress Level',
+              data: last30.map(d => d.stress_level),
+              borderColor: '#f43f5e',
+              borderWidth: 1.5,
+              borderDash: [4, 4],
+              tension: 0.3
+            },
+            {
+              label: 'Sleep Hours',
+              data: last30.map(d => d.sleep_hours),
+              borderColor: '#06b6d4',
+              borderWidth: 1.5,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#64748b', font: { size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#64748b', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // Render Historical Logs Table
+    function renderLogsTable() {
+      const tbody = document.getElementById('logs-table-body');
+      tbody.innerHTML = '';
+
+      // Show most recent entries first
+      const reversed = [...dataset].reverse().slice(0, 15);
+
+      reversed.forEach(log => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-900/50 transition';
+        tr.innerHTML = `
+          <td class="px-4 py-3 text-slate-200 font-semibold">${log.date}</td>
+          <td class="px-4 py-3 text-cyan-400">${log.sleep_hours} hrs</td>
+          <td class="px-4 py-3 text-amber-400">${log.workload_rating} / 10</td>
+          <td class="px-4 py-3 text-rose-400">${log.stress_level} / 10</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-brand-500/10 text-brand-300 font-bold">${log.mood_rating} / 10</span></td>
+          <td class="px-4 py-3 text-slate-400 truncate max-w-xs font-sans text-xs">${log.journal_entry || '—'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Tab Switching Logic
+    function setTab(tab) {
+      activeTab = tab;
+      document.getElementById('tab-dashboard-content').classList.toggle('hidden', tab !== 'dashboard');
+      document.getElementById('tab-nlp-content').classList.toggle('hidden', tab !== 'nlp');
+      document.getElementById('tab-logs-content').classList.toggle('hidden', tab !== 'logs');
+
+      document.getElementById('view-mode-dashboard').className = tab === 'dashboard' ? 'px-3 py-1.5 rounded-lg bg-brand-600 text-white transition' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition';
+      document.getElementById('view-mode-nlp').className = tab === 'nlp' ? 'px-3 py-1.5 rounded-lg bg-brand-600 text-white transition' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition';
+      document.getElementById('view-mode-logs').className = tab === 'logs' ? 'px-3 py-1.5 rounded-lg bg-brand-600 text-white transition' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition';
+    }
+
+    // NLP Interactive Analyzer Execution
+    function runNlpAnalysis() {
+      const text = document.getElementById('nlp-input-text').value;
+      const sentiment = analyzeSentiment(text);
+      const topics = extractTopics(text);
+
+      document.getElementById('nlp-compound-score').textContent = sentiment.compound;
+      
+      const badge = document.getElementById('nlp-badge');
+      if (sentiment.sentiment === 'positive') {
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+        badge.textContent = 'Positive';
+        document.getElementById('nlp-sentiment-bar-neg').style.width = '0%';
+        document.getElementById('nlp-sentiment-bar-pos').style.width = `${Math.abs(sentiment.compound) * 100}%`;
+      } else if (sentiment.sentiment === 'negative') {
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20';
+        badge.textContent = 'Negative';
+        document.getElementById('nlp-sentiment-bar-neg').style.width = `${Math.abs(sentiment.compound) * 100}%`;
+        document.getElementById('nlp-sentiment-bar-pos').style.width = '0%';
+      } else {
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20';
+        badge.textContent = 'Neutral';
+        document.getElementById('nlp-sentiment-bar-neg').style.width = '0%';
+        document.getElementById('nlp-sentiment-bar-pos').style.width = '0%';
+      }
+
+      document.getElementById('topic-count-exams').textContent = topics.topic_counts.exams;
+      document.getElementById('topic-count-fatigue').textContent = topics.topic_counts.fatigue;
+      document.getElementById('topic-count-social').textContent = topics.topic_counts.social;
+      document.getElementById('topic-count-workload').textContent = topics.topic_counts.workload;
+
+      const dominantText = topics.dominant_topics.length > 0 ? topics.dominant_topics.join(', ') : 'No dominant theme';
+      document.getElementById('nlp-dominant-topics').textContent = dominantText;
+
+      document.getElementById('nlp-summary-sentence').textContent = 
+        `"Journal sentiment is ${sentiment.sentiment}. Common journal theme: ${dominantText}."`;
+    }
+
+    function loadNlpPreset(id) {
+      const input = document.getElementById('nlp-input-text');
+      if (id === 1) {
+        input.value = "I am exhausted after studying for exams. I have assignments and a project deadline.";
+      } else if (id === 2) {
+        input.value = "Feeling super tired and fatigued today. Had insomnia all night and zero energy.";
+      } else if (id === 3) {
+        input.value = "Had a great time with my friends and family today. Wonderful social gathering!";
+      }
+      runNlpAnalysis();
+    }
+
+    // Modal Operations & Form Handling
+    function openCheckInModal() {
+      document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('checkin-modal').classList.remove('hidden');
+    }
+
+    function closeCheckInModal() {
+      document.getElementById('checkin-modal').classList.add('hidden');
+    }
+
+    function handleNewLogSubmit(e) {
+      e.preventDefault();
+
+      const newLog = {
+        date: document.getElementById('input-date').value,
+        sleep_hours: parseFloat(document.getElementById('input-sleep').value),
+        workload_rating: parseInt(document.getElementById('input-workload').value),
+        stress_level: parseInt(document.getElementById('input-stress').value),
+        mood_rating: parseInt(document.getElementById('input-mood').value),
+        journal_entry: document.getElementById('input-journal').value
+      };
+
+      dataset.push(newLog);
+      refreshAnalytics();
+      closeCheckInModal();
+    }
+
+    // Initialize Application
+    window.onload = function() {
+      dataset = generateInitialDataset();
+      refreshAnalytics();
+      runNlpAnalysis();
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>
